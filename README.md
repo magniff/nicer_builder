@@ -102,7 +102,7 @@ let user = User::builder()
     .
 ```
 
-Upon receiving this `.` input, the language server protocol (`LSP`) proposes the complete list of builder methods - `name`, `age`, and `address`, even though `name` has just been set. Furthermore, the visibility of the`build`method is unrestricted - you can invoke it in the midst of the build process, potentially leading to a`panic`when attempting to`unwrap` the result.
+Upon receiving this `.` input, the language server protocol (`LSP`) proposes the complete list of builder methods - `name`, `age`, and `address`, even though `name` has just been set. Furthermore, the visibility of the `build` method is unrestricted - you can invoke it in the midst of the build process, potentially leading to a `panic` when attempting to`unwrap` the result.
 
 ## Manual implementation
 
