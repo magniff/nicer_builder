@@ -23,20 +23,11 @@ impl User {
     }
 }
 
+#[derive(Default)]
 pub struct UserBuilder {
     name: Option<&'static str>,
     age: Option<u32>,
     address: Option<&'static str>,
-}
-
-impl Default for UserBuilder {
-    fn default() -> Self {
-        Self {
-            name: None,
-            age: None,
-            address: None,
-        }
-    }
 }
 
 impl UserBuilder {
@@ -82,11 +73,11 @@ println!("User: {:?}", user);
 
 Regardless of whether you favor this approach, it presents several challenges:
 
-## The build Method Returns a Result
+## The build method returns a `Result``
 
-Although the builder technically knows its state, we are compelled to return the User instance, constructed by the builder, wrapped in a Result.
+Although the builder technically knows its state, we are compelled to return the `User` instance, constructed by the builder, wrapped in a `Result`
 
-## Builder Lacks Awareness of Fields Already Set
+## Builder lacks awareness of fields already set
 
 This results in the following sequence of methods being entirely feasible:
 
@@ -101,7 +92,7 @@ let user = User::builder()
     .unwrap();
 ```
 
-## Suboptimal IDE Completion Support
+## Suboptimal IDE completion support
 
 This issue stems from the previous one; when I enter:
 
@@ -111,7 +102,7 @@ let user = User::builder()
     .
 ```
 
-Upon receiving this ` .` input, the language server protocol (`LSP`) proposes the complete list of builder methods - `name`, `age`, and `address`, even though `name`has just been set. Furthermore, the visibility of the`build`method is unrestricted - you can invoke it in the midst of the build process, potentially leading to a`panic`when attempting to`unwrap` the result.
+Upon receiving this `.` input, the language server protocol (`LSP`) proposes the complete list of builder methods - `name`, `age`, and `address`, even though `name` has just been set. Furthermore, the visibility of the`build`method is unrestricted - you can invoke it in the midst of the build process, potentially leading to a`panic`when attempting to`unwrap` the result.
 
 ## Manual implementation
 
