@@ -73,7 +73,7 @@ println!("User: {:?}", user);
 
 Regardless of whether you favor this approach, it presents several challenges:
 
-## The build method returns a `Result``
+## The build method returns a `Result`
 
 Although the builder technically knows its state, we are compelled to return the `User` instance, constructed by the builder, wrapped in a `Result`
 
