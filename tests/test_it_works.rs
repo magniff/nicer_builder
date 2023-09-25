@@ -1,36 +1,42 @@
 #[cfg(test)]
 mod test {
+
     #[test]
     fn alice_bob() {
         #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
         struct User {
-            name: &'static str,
+            name: String,
             age: Option<u32>,
             address: Option<&'static str>,
         }
+
         let alice = User::builder()
-            .with_address("SF")
-            .with_age(10)
-            .with_name("alice")
+            .with_name("Alice")
+            .with_address("Wonderland")
+            .with_age(30u32)
             .build();
 
-        let bob = User::builder().with_name("bob".into()).build();
+        let bob = User::builder()
+            .with_name("Cat")
+            .with_address("Wonderland")
+            .with_age(100500u32)
+            .build();
 
         assert_eq!(
             alice,
             User {
-                name: "alice",
-                age: Some(10),
-                address: Some("SF".into())
+                name: "Alice".into(),
+                age: Some(30),
+                address: Some("Wonderland".into())
             }
         );
 
         assert_eq!(
             bob,
             User {
-                name: "bob",
-                age: None,
-                address: None,
+                name: "Cat".into(),
+                age: Some(100500),
+                address: Some("Wonderland".into())
             }
         );
     }

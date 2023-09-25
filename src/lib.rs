@@ -4,6 +4,7 @@ use proc_macro2;
 use syn::spanned::Spanned;
 
 const FINAL_BUILDER_SUFFIX: &str = "FinalBuilder";
+const FIELDS_CONTAINER_SUFFIX: &str = "FieldsContainer";
 
 /// Given a reference to a `syn::Type`, this function attempts to extract the inner type `T`
 /// if the input type is an `Option<T>`. If the input type is not an `Option`, the function
@@ -44,10 +45,10 @@ fn generate_maybe_wrapped_with_option(ty: &syn::Type) -> proc_macro2::TokenStrea
 
 fn generate_container_fields(data: &syn::DataStruct) -> proc_macro2::TokenStream {
     let wrapped_fields = data.fields.iter().map(|field| {
-        let name = field.ident.clone();
-        let new_ty = generate_maybe_wrapped_with_option(&field.ty);
+        let field_name = field.ident.clone();
+        let wrapped_type = generate_maybe_wrapped_with_option(&field.ty);
         quote::quote! {
-            #name: #new_ty
+            #field_name: #wrapped_type
         }
     });
     quote::quote!(
@@ -61,7 +62,10 @@ fn generate_container(
 ) -> (syn::Ident, proc_macro2::TokenStream) {
     let fields = generate_container_fields(data);
     let builder_name = syn::Ident::new(
-        format!("__{name}FieldsContainer", name = struct_name.to_string()).as_str(),
+        &format!(
+            "__{name}{FIELDS_CONTAINER_SUFFIX}",
+            name = struct_name.to_string()
+        ),
         struct_name.span(),
     );
     (
@@ -106,7 +110,7 @@ fn generate_final_builder(
     )
 }
 
-fn compose_cache_key(fields: &[syn::Field]) -> String {
+fn forge_cache_key(fields: &[syn::Field]) -> String {
     fields
         .iter()
         .cloned()
@@ -123,18 +127,17 @@ fn generate_builder(
     include_build_method_impl: bool,
     generator_cache: &mut HashMap<String, (syn::Ident, proc_macro2::TokenStream)>,
 ) -> syn::Ident {
-    let cache_key = compose_cache_key(fields.as_slice());
+    let cache_key = forge_cache_key(fields.as_slice());
     if let Some((ident, _)) = generator_cache.get(&cache_key) {
         return ident.clone();
     }
 
     let builder_name = syn::Ident::new(
-        format!(
+        &format!(
             "__{name}_{nonce}",
             name = struct_name.to_string(),
             nonce = uuid::Uuid::new_v4().to_string().replace("-", "")
-        )
-        .as_str(),
+        ),
         struct_name.span(),
     );
 
@@ -147,11 +150,10 @@ fn generate_builder(
         // Literally nothing else to generate, return to the FinalBuilder
         let next_builder_name = if new_fields.is_empty() {
             syn::Ident::new(
-                format!(
+                &format!(
                     "__{name}{FINAL_BUILDER_SUFFIX}",
                     name = struct_name.to_string()
-                )
-                .as_str(),
+                ),
                 struct_name.span(),
             )
         }
@@ -182,18 +184,17 @@ fn generate_builder(
         };
 
         let method_name = syn::Ident::new(
-            format!(
+            &format!(
                 "with_{name}",
                 name = field.ident.clone().unwrap().to_string()
-            )
-            .as_str(),
+            ),
             field.ident.span(),
         );
 
         let field_type = extract_from_option_type(&field.ty).unwrap_or_else(|| field.ty.clone());
         quote::quote!(
-            pub fn #method_name(mut self, value: #field_type) -> #next_builder_name {
-                self.shared.#field_name = Some(value);
+            pub fn #method_name(mut self, value: impl Into<#field_type>) -> #next_builder_name {
+                self.shared.#field_name = Some(value.into());
                 #next_builder_name {shared: self.shared}
             }
         )
@@ -225,21 +226,26 @@ fn generate_builder(
 pub fn nicer_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let parsed = syn::parse_macro_input!(input as syn::DeriveInput);
 
-    // Fool protection
+    // We support structs only
     let syn::Data::Struct(data) = parsed.data else {
         panic!("This macro can only operate on structs")
     };
 
+    // And the struct must have named fields, anon are no good
+    if !data.fields.iter().all(|field| field.ident.is_some()) {
+        panic!("This struct contains anon fields, which is not supported");
+    }
+
     let (shared_builder_name, shared_builder_definition) = generate_container(&parsed.ident, &data);
     let final_builder_name = syn::Ident::new(
-        format!(
+        &format!(
             "__{name}{FINAL_BUILDER_SUFFIX}",
             name = parsed.ident.to_string()
-        )
-        .as_str(),
+        ),
         parsed.ident.span(),
     );
 
+    // That builder will contain the actual `build` method
     let final_builder = generate_final_builder(
         &parsed.ident,
         &final_builder_name,
@@ -247,8 +253,7 @@ pub fn nicer_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         &data,
     );
 
-    let mut generator_cache =
-        HashMap::with_capacity(2usize.pow((data.fields.len() + 1usize) as u32));
+    let mut generator_cache = HashMap::with_capacity(1 + 2usize.pow((data.fields.len()) as u32));
     let struct_name = parsed.ident;
 
     let build_method_impl = {
@@ -272,6 +277,7 @@ pub fn nicer_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         )
     };
 
+    // That builder you'd get by invoking the `builder` method on the target struct
     let initial_builder_name = generate_builder(
         &struct_name,
         &shared_builder_name,
@@ -281,6 +287,7 @@ pub fn nicer_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         &mut generator_cache,
     );
 
+    // Recover builders implementations from the the generator cache
     let builders = generator_cache.into_values().map(|(_, tokens)| tokens);
 
     quote::quote!(
