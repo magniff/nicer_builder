@@ -44,4 +44,23 @@ mod test {
             }
         );
     }
+    #[test]
+    fn attributes() {
+        #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
+        struct User {
+            name: String,
+            #[default("Wonderland")]
+            address: String,
+        }
+
+        let alice = User::builder().with_name("Alice").build();
+
+        assert_eq!(
+            alice,
+            User {
+                name: "Alice".into(),
+                address: "Wonderland".into(),
+            }
+        );
+    }
 }
