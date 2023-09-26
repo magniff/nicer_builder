@@ -325,7 +325,6 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     // That builder you'd get by invoking the `builder` method on the target struct
     let defaults = extract_defaults(&data.fields.iter().cloned().collect::<Vec<_>>());
-    println!("Defaults: {:?}", defaults);
     let initial_builder_name = generate_builder(
         &struct_name,
         &shared_builder_name,
@@ -337,7 +336,6 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     // Recover builders implementations from the the generator cache
     let builders = generator_cache.into_values().map(|(_, tokens)| tokens);
-
     let shared_builder_defaults_setters = defaults.iter().map(|(name, tokens)| {
         let name = syn::Ident::new(name.as_str(), parsed.ident.clone().span());
         quote::quote!(

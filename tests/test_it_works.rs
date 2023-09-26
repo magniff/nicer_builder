@@ -53,13 +53,21 @@ mod test {
             address: String,
         }
 
-        let alice = User::builder().with_name("Alice").build();
-
         assert_eq!(
-            alice,
+            User::builder().with_name("Alice").build(),
             User {
                 name: "Alice".into(),
                 address: "Wonderland".into(),
+            }
+        );
+        assert_eq!(
+            User::builder()
+                .with_name("Alice")
+                .with_address("Dunno")
+                .build(),
+            User {
+                name: "Alice".into(),
+                address: "Dunno".into(),
             }
         );
     }
