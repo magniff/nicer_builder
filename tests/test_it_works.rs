@@ -45,7 +45,7 @@ mod test {
         );
     }
     #[test]
-    fn attributes() {
+    fn defaults() {
         #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
         struct User {
             name: String,

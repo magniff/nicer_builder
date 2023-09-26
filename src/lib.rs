@@ -8,23 +8,23 @@ const FIELDS_CONTAINER_SUFFIX: &str = "FieldsContainer";
 
 fn extract_defaults(
     fields: &[syn::Field],
-) -> std::collections::HashMap<String, proc_macro2::TokenStream> {
+) -> std::collections::HashMap<syn::Ident, proc_macro2::TokenStream> {
     let mut defaults = std::collections::HashMap::with_capacity(fields.len());
     for field in fields.iter() {
         for attr in field.attrs.iter() {
             match attr.meta.clone() {
                 syn::Meta::List(metalist) => {
-                    let segment = metalist
+                    match metalist
                         .path
                         .segments
                         .first()
-                        .expect("Should have an argument");
-                    match segment.ident.to_string().as_str() {
+                        .unwrap()
+                        .ident
+                        .to_string()
+                        .as_str()
+                    {
                         "default" => {
-                            defaults.insert(
-                                field.ident.clone().unwrap().to_string(),
-                                metalist.tokens.clone(),
-                            );
+                            defaults.insert(field.ident.clone().unwrap(), metalist.tokens.clone());
                         }
                         value => panic!("Attribute '{value}' is not supported"),
                     }
@@ -154,7 +154,7 @@ fn generate_builder(
     fields_container_name: &syn::Ident,
     fields: Vec<syn::Field>,
     build_method_impl: &proc_macro2::TokenStream,
-    defaults: &std::collections::HashMap<String, proc_macro2::TokenStream>,
+    defaults: &std::collections::HashMap<syn::Ident, proc_macro2::TokenStream>,
     generator_cache: &mut HashMap<String, (syn::Ident, proc_macro2::TokenStream)>,
 ) -> syn::Ident {
     let cache_key = forge_cache_key(fields.as_slice());
@@ -231,11 +231,9 @@ fn generate_builder(
     });
 
     let are_all_defaults = {
-        fields.iter().all(|field| {
-            defaults
-                .get(&field.ident.clone().unwrap().to_string())
-                .is_some()
-        })
+        fields
+            .iter()
+            .all(|field| defaults.get(&field.ident.clone().unwrap()).is_some())
     };
 
     let are_all_optional = fields
@@ -323,8 +321,8 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         )
     };
 
-    // That builder you'd get by invoking the `builder` method on the target struct
     let defaults = extract_defaults(&data.fields.iter().cloned().collect::<Vec<_>>());
+    // That builder you'd get by invoking the `builder` method on the target struct
     let initial_builder_name = generate_builder(
         &struct_name,
         &shared_builder_name,
@@ -337,7 +335,6 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // Recover builders implementations from the the generator cache
     let builders = generator_cache.into_values().map(|(_, tokens)| tokens);
     let shared_builder_defaults_setters = defaults.iter().map(|(name, tokens)| {
-        let name = syn::Ident::new(name.as_str(), parsed.ident.clone().span());
         quote::quote!(
             shared_builder.#name = Some(#tokens.into());
         )
