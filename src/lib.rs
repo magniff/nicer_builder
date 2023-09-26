@@ -124,7 +124,6 @@ fn generate_builder(
     fields_container_name: &syn::Ident,
     fields: Vec<syn::Field>,
     build_method_impl: &proc_macro2::TokenStream,
-    include_build_method_impl: bool,
     generator_cache: &mut HashMap<String, (syn::Ident, proc_macro2::TokenStream)>,
 ) -> syn::Ident {
     let cache_key = forge_cache_key(fields.as_slice());
@@ -167,7 +166,6 @@ fn generate_builder(
                 fields_container_name,
                 new_fields,
                 build_method_impl,
-                true,
                 generator_cache,
             )
         }
@@ -178,7 +176,6 @@ fn generate_builder(
                 fields_container_name,
                 new_fields,
                 build_method_impl,
-                include_build_method_impl,
                 generator_cache,
             )
         };
@@ -200,8 +197,7 @@ fn generate_builder(
         )
     });
 
-    let include_build_method_impl = include_build_method_impl
-        || fields.is_empty()
+    let include_build_method_impl = fields.is_empty()
         || fields
             .iter()
             .all(|field| extract_from_option_type(&field.ty).is_some());
@@ -289,7 +285,6 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         &shared_builder_name,
         data.fields.into_iter().collect(),
         &build_method_impl,
-        false,
         &mut generator_cache,
     );
 

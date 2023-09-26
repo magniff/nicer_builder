@@ -5,6 +5,7 @@ mod test {
         #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
         struct Empty;
         let empty = Empty::builder().build();
+
         assert_eq!(empty, Empty);
     }
     #[test]
@@ -14,7 +15,10 @@ mod test {
             inner: Option<()>,
         }
         let container = Container::builder().build();
+        let another_container = Container::builder().with_inner(()).build();
+
         assert_eq!(container, Container { inner: None });
+        assert_eq!(another_container, Container { inner: Some(()) });
     }
     #[test]
     fn basic() {
