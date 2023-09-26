@@ -1,25 +1,34 @@
 #[cfg(test)]
 mod test {
-
     #[test]
-    fn alice_bob() {
+    fn empty() {
+        #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
+        struct Empty;
+        let empty = Empty::builder().build();
+        assert_eq!(empty, Empty);
+    }
+    #[test]
+    fn optinal() {
+        #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
+        struct Container {
+            inner: Option<()>,
+        }
+        let container = Container::builder().build();
+        assert_eq!(container, Container { inner: None });
+    }
+    #[test]
+    fn basic() {
         #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
         struct User {
             name: String,
             age: Option<u32>,
-            address: Option<&'static str>,
+            address: Option<String>,
         }
 
         let alice = User::builder()
-            .with_name("Alice")
             .with_address("Wonderland")
             .with_age(30u32)
-            .build();
-
-        let bob = User::builder()
-            .with_name("Cat")
-            .with_address("Wonderland")
-            .with_age(100500u32)
+            .with_name("Alice")
             .build();
 
         assert_eq!(
@@ -27,15 +36,6 @@ mod test {
             User {
                 name: "Alice".into(),
                 age: Some(30),
-                address: Some("Wonderland".into())
-            }
-        );
-
-        assert_eq!(
-            bob,
-            User {
-                name: "Cat".into(),
-                age: Some(100500),
                 address: Some("Wonderland".into())
             }
         );

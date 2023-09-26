@@ -200,6 +200,12 @@ fn generate_builder(
         )
     });
 
+    let include_build_method_impl = include_build_method_impl
+        || fields.is_empty()
+        || fields
+            .iter()
+            .all(|field| extract_from_option_type(&field.ty).is_some());
+
     let build_method = if include_build_method_impl {
         build_method_impl.clone()
     } else {
@@ -222,8 +228,8 @@ fn generate_builder(
     builder_name
 }
 
-#[proc_macro_derive(Builder)]
-pub fn nicer_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+#[proc_macro_derive(Builder, attributes(builder))]
+pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let parsed = syn::parse_macro_input!(input as syn::DeriveInput);
 
     // We support structs only
