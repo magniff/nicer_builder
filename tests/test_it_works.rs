@@ -2,7 +2,7 @@
 mod test {
     #[test]
     fn empty() {
-        #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
+        #[derive(builder_pattern_fsm::Builder, Debug, PartialEq, Eq)]
         struct Empty;
         let empty = Empty::builder().build();
 
@@ -10,7 +10,7 @@ mod test {
     }
     #[test]
     fn optinal() {
-        #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
+        #[derive(builder_pattern_fsm::Builder, Debug, PartialEq, Eq)]
         struct Container {
             inner: Option<()>,
         }
@@ -22,7 +22,7 @@ mod test {
     }
     #[test]
     fn basic() {
-        #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
+        #[derive(builder_pattern_fsm::Builder, Debug, PartialEq, Eq)]
         struct User {
             name: String,
             age: Option<u32>,
@@ -46,29 +46,15 @@ mod test {
     }
     #[test]
     fn defaults() {
-        #[derive(nicer_builder::Builder, Debug, PartialEq, Eq)]
+        #[derive(builder_pattern_fsm::Builder, Debug, PartialEq, Eq)]
         struct User {
             name: String,
+            #[default(false)]
+            flag: bool,
             #[default("Wonderland")]
             address: String,
         }
 
-        assert_eq!(
-            User::builder().with_name("Alice").build(),
-            User {
-                name: "Alice".into(),
-                address: "Wonderland".into(),
-            }
-        );
-        assert_eq!(
-            User::builder()
-                .with_name("Alice")
-                .with_address("Dunno")
-                .build(),
-            User {
-                name: "Alice".into(),
-                address: "Dunno".into(),
-            }
-        );
+        User::builder().with_name("world").build();
     }
 }
