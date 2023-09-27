@@ -1,6 +1,8 @@
 [package]
 name = "builder-pattern-fsm"
 version = "0.0.1"
+description = "Finite state machine based builder pattern generator"
+license = "MIT"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
